@@ -1,0 +1,7 @@
+[project]
+name = "lab2"
+version = "0.1.0"
+description = "Учебное приложение RSA с графическим интерфейсом на tkinter"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
