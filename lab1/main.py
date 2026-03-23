@@ -1,9 +1,6 @@
-# ================= IDEA IMPLEMENTATION =================
-
 MODULO = 65537
 MASK = 0xFFFF
 
-# ---------- Вспомогательные функции ----------
 
 def add(a, b):
     return (a + b) & MASK
@@ -21,7 +18,7 @@ def mul(a, b):
 def xor(a, b):
     return a ^ b
 
-# ---------- Генерация подключей ----------
+
 
 def generate_subkeys(key_bytes):
     key = int.from_bytes(key_bytes, 'big')
@@ -37,7 +34,6 @@ def generate_subkeys(key_bytes):
 
     return subkeys
 
-# ---------- Один блок ----------
 
 def idea_encrypt_block(block_bytes, subkeys):
     X1 = int.from_bytes(block_bytes[0:2], 'big')
@@ -85,7 +81,6 @@ def idea_encrypt_block(block_bytes, subkeys):
 
     return result
 
-# ---------- Высокоуровневое шифрование ----------
 
 def pad(data):
     pad_len = 8 - (len(data) % 8)
@@ -105,46 +100,38 @@ def encrypt_text(text, key):
 
     return result.decode('latin-1')
 
-# ---------- Дешифрование ----------
 
 def mul_inv(a):
-    """Мультипликативная обратная по модулю 65537."""
     if a == 0:
         a = 65536
     return pow(a, MODULO - 2, MODULO) & MASK
 
 def add_inv(a):
-    """Аддитивная обратная по модулю 65536."""
     return (65536 - a) & MASK
 
 def generate_decrypt_subkeys(ek):
-    """Генерация подключей дешифрования из подключей шифрования."""
     dk = [0] * 52
 
-    # Группа 0: обратные ключи выходного преобразования (без перестановки)
     dk[0] = mul_inv(ek[48])
     dk[1] = add_inv(ek[49])
     dk[2] = add_inv(ek[50])
     dk[3] = mul_inv(ek[51])
 
-    # MA-ключи из раунда 8
     dk[4] = ek[46]
     dk[5] = ek[47]
 
-    # Группы 2–8: обратные ключи раундов с перестановкой add-ключей
     for r in range(2, 9):
         d = (r - 1) * 6
-        e = (9 - r) * 6   # смещение раунда шифрования (key mixing)
-        m = (8 - r) * 6   # смещение раунда шифрования (MA-ключи)
+        e = (9 - r) * 6
+        m = (8 - r) * 6
 
         dk[d]     = mul_inv(ek[e])
-        dk[d + 1] = add_inv(ek[e + 2])   # перестановка
-        dk[d + 2] = add_inv(ek[e + 1])   # перестановка
+        dk[d + 1] = add_inv(ek[e + 2])
+        dk[d + 2] = add_inv(ek[e + 1])
         dk[d + 3] = mul_inv(ek[e + 3])
         dk[d + 4] = ek[m + 4]
         dk[d + 5] = ek[m + 5]
 
-    # Последняя группа: обратные ключи раунда 1 (без перестановки)
     dk[48] = mul_inv(ek[0])
     dk[49] = add_inv(ek[1])
     dk[50] = add_inv(ek[2])
@@ -175,7 +162,6 @@ def decrypt_text(cipher_str, key):
 
     return unpad(result).decode(errors='replace')
 
-# ================= TKINTER GUI =================
 
 if __name__ == "__main__":
     import tkinter as tk
