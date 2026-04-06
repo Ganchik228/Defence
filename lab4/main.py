@@ -98,12 +98,10 @@ _K = [int(abs(math.sin(i + 1)) * (1 << 32)) & 0xFFFFFFFF for i in range(64)]
 
 
 def _left_rotate(value: int, bits: int) -> int:
-    """Rotate a 32-bit integer left by bits positions."""
     return ((value << bits) | (value >> (32 - bits))) & 0xFFFFFFFF
 
 
 def md5(message: bytes) -> str:
-    """Return MD5 digest for bytes as a 32-char lowercase hex string."""
     original_bit_length = (len(message) * 8) & 0xFFFFFFFFFFFFFFFF
 
     padded = bytearray(message)
@@ -148,35 +146,18 @@ def md5(message: bytes) -> str:
     digest = b"".join(x.to_bytes(4, byteorder="little") for x in (a0, b0, c0, d0))
     return "".join(f"{byte:02x}" for byte in digest)
 
-
-# ============================================================================
-# SYSTEM INFORMATION COLLECTION (without external libraries)
-# ============================================================================
-
 def get_system_info() -> dict[str, str]:
-    """Collect hardware and software information about the computer.
-    
-    Uses only built-in Python modules to gather:
-    - Operating system information
-    - Processor information
-    - Network interface (MAC address)
-    - System hostname
-    - Disk information
-    """
     info = {}
 
-    # Operating system information
     info["system"] = platform.system()
     info["release"] = platform.release()
     info["version"] = platform.version()
     info["arch"] = platform.architecture()[0]
 
-    # Processor information (Windows-specific method)
     try:
         if sys.platform == "win32":
             import ctypes
 
-            # Get processor name from Windows registry
             try:
                 result = subprocess.run(
                     ["wmic", "cpu", "get", "name"],
@@ -189,7 +170,6 @@ def get_system_info() -> dict[str, str]:
             except Exception:
                 info["cpu"] = platform.processor()
 
-            # Get total RAM
             try:
                 result = subprocess.run(
                     ["wmic", "computersystem", "get", "totalphysicalmemory"],
@@ -236,12 +216,6 @@ def get_system_info() -> dict[str, str]:
 
 
 def create_system_fingerprint(info: dict[str, str]) -> str:
-    """Create a unique fingerprint from system information.
-    
-    Uses the MD5 hash of critical system identifiers to create a unique
-    device fingerprint.
-    """
-    # Order of keys for consistent hashing
     key_order = ["mac_address", "cpu", "hostname", "system", "architecture"]
 
     fingerprint_data = "|".join(
@@ -251,34 +225,18 @@ def create_system_fingerprint(info: dict[str, str]) -> str:
 
 
 def get_license_hash() -> str:
-    """Get the MD5 hash of the current system fingerprint."""
     info = get_system_info()
     fingerprint = create_system_fingerprint(info)
     return md5(fingerprint.encode("utf-8"))
 
 
-# ============================================================================
-# LICENSE MANAGEMENT
-# ============================================================================
-
 class LicenseManager:
-    """Manages license validation and generation.
-    
-    The license file contains a hash of the system fingerprint.
-    If the system configuration changes, the hash will no longer match.
-    """
-
     LICENSE_FILE = "license.key"
 
     @classmethod
     def generate_license(cls) -> str:
-        """Generate a license file for the current system.
-        
-        Returns the license key (hash of system fingerprint).
-        """
         license_hash = get_license_hash()
 
-        # Store the license key
         with open(cls.LICENSE_FILE, "w", encoding="utf-8") as f:
             f.write(license_hash)
 
@@ -317,10 +275,6 @@ class LicenseManager:
         return "\n".join(lines)
 
 
-# ============================================================================
-# MAIN APPLICATION
-# ============================================================================
-
 def main() -> None:
     """Main application entry point.
     
@@ -332,11 +286,9 @@ def main() -> None:
     print("=" * 70)
     print()
 
-    # Show system information
     print(LicenseManager.get_system_info_display())
     print()
 
-    # Check if this is the first run
     if not Path(LicenseManager.LICENSE_FILE).exists():
         print("Первый запуск. Генерирование лицензии для текущего компьютера...")
         print()
@@ -348,7 +300,6 @@ def main() -> None:
         print()
         return
 
-    # Validate license on subsequent runs
     is_valid, message = LicenseManager.validate_license()
     print()
 
